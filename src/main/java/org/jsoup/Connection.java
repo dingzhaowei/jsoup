@@ -104,6 +104,13 @@ public interface Connection {
     public Connection method(Method method);
 
     /**
+     * Configures the connection to exclude expired cookies of the response.
+     * @param excludeExpiredCookies - false (default) if keep expired cookies
+     * @return this Connection, for chaining
+     */
+    public Connection excludeExpiredCookies(boolean excludeExpiredCookies);
+
+    /**
      * Configures the connection to not throw exceptions when a HTTP error occurs. (4xx - 5xx, e.g. 404 or 500). By
      * default this is <b>false</b>; an IOException is thrown if an error is encountered. If set to <b>true</b>, the
      * response is populated with the error body, and the status message will reflect the error.
@@ -434,6 +441,19 @@ public interface Connection {
          */
         public Request maxBodySize(int bytes);
 
+        /**
+         * Get the current excludeExpiredCookies configuration
+         * @return true if excludeExpiredCookies is enabled
+         */
+        public boolean excludeExpiredCookies();
+
+        /**
+         * Configures the request to filter the expired cookies from server. By default this is <b>false</b>.
+         * @param ecludeExpiredCookies true if expired cookies from server should be excluded.
+         * @return this Request, for chaining
+         */
+        public Request excludeExpiredCookies(boolean ecludeExpiredCookies);
+        
         /**
          * Get the current followRedirects configuration.
          * @return true if followRedirects is enabled.

@@ -8,7 +8,9 @@ import org.jsoup.parser.Parser;
 import org.jsoup.parser.TokenQueue;
 
 import javax.net.ssl.*;
+
 import java.io.*;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -45,7 +47,7 @@ public class HttpConnection implements Connection {
         return con;
     }
 
-	private static String encodeUrl(String url) {
+    private static String encodeUrl(String url) {
 		if(url == null)
 			return null;
     	return url.replaceAll(" ", "%20");
@@ -109,6 +111,11 @@ public class HttpConnection implements Connection {
 
     public Connection method(Method method) {
         req.method(method);
+        return this;
+    }
+
+    public Connection excludeExpiredCookies(boolean excludeExpiredCookies) {
+        req.excludeExpiredCookies(excludeExpiredCookies);
         return this;
     }
 
@@ -354,6 +361,7 @@ public class HttpConnection implements Connection {
         private int maxBodySizeBytes;
         private boolean followRedirects;
         private Collection<Connection.KeyVal> data;
+        private boolean excludeExpiredCookies = false;
         private boolean ignoreHttpErrors = false;
         private boolean ignoreContentType = false;
         private Parser parser;
@@ -387,6 +395,15 @@ public class HttpConnection implements Connection {
         public Connection.Request maxBodySize(int bytes) {
             Validate.isTrue(bytes >= 0, "maxSize must be 0 (unlimited) or larger");
             maxBodySizeBytes = bytes;
+            return this;
+        }
+
+        public boolean excludeExpiredCookies() {
+            return excludeExpiredCookies;
+        }
+
+        public Connection.Request excludeExpiredCookies(boolean excludeExpiredCookies) {
+            this.excludeExpiredCookies = excludeExpiredCookies;
             return this;
         }
 
@@ -515,8 +532,8 @@ public class HttpConnection implements Connection {
 
                 int status = conn.getResponseCode();
                 res = new Response(previousResponse);
-                res.setupFromConnection(conn, previousResponse);
                 res.req = req;
+                res.setupFromConnection(conn, previousResponse);
 
                 // redirect if there's a location header (from 3xx, or 201 etc)
                 if (res.hasHeader(LOCATION) && req.followRedirects()) {
@@ -728,15 +745,23 @@ public class HttpConnection implements Connection {
                 List<String> values = entry.getValue();
                 if (name.equalsIgnoreCase("Set-Cookie")) {
                     for (String value : values) {
-                        if (value == null)
+                        if (value == null || !value.contains("="))
                             continue;
-                        TokenQueue cd = new TokenQueue(value);
-                        String cookieName = cd.chompTo("=").trim();
-                        String cookieVal = cd.consumeTo(";").trim();
-                        // ignores path, date, domain, validateTLSCertificates et al. req'd?
-                        // name not blank, value not null
-                        if (cookieName.length() > 0)
-                            cookie(cookieName, cookieVal);
+                        if (req != null && req.excludeExpiredCookies()) {
+                            for (HttpCookie c : HttpCookie.parse(value)) {
+                                if (c.getName() != null && !c.getName().isEmpty() && !c.hasExpired()) {
+                                    cookie(c.getName(), c.getValue());
+                                }
+                            }
+                        } else {
+                            TokenQueue cd = new TokenQueue(value);
+                            String cookieName = cd.chompTo("=").trim();
+                            String cookieVal = cd.consumeTo(";").trim();
+                            // ignores path, date, domain, validateTLSCertificates et al. req'd?
+                            // name not blank, value not null
+                            if (cookieName.length() > 0)
+                                cookie(cookieName, cookieVal);
+                        }
                     }
                 } else { // only take the first instance of each header
                     if (!values.isEmpty())
