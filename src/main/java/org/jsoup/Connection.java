@@ -1,13 +1,14 @@
 package org.jsoup;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.parser.Parser;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
 
 /**
  * A Connection provides a convenient interface to fetch content from the web, and parse them into Documents.
@@ -222,6 +223,13 @@ public interface Connection {
      * @return this Connection, for chaining
      */
     public Connection parser(Parser parser);
+
+    /**
+     * Provide a proxy to use when sending request
+     * @param proxy the proxy to use
+     * @return this Connection, for chaining
+     */
+    public Connection proxy(Proxy proxy);
 
     /**
      * Sets the default post data character set for x-www-form-urlencoded post data
@@ -532,6 +540,19 @@ public interface Connection {
          * @return current Parser
          */
         public Parser parser();
+
+        /**
+         * Set the proxy parameter to the request
+         * @param proxy proxy to set
+         * @return this Request, for chaining
+         */
+        public Request proxy(Proxy proxy);
+
+        /**
+         * Get the proxy parameter
+         * @return current proxy
+         */
+        public Proxy proxy();
 
         /**
          * Sets the post data character set for x-www-form-urlencoded post data

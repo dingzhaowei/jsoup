@@ -1,18 +1,15 @@
 package org.jsoup.helper;
 
-import org.jsoup.Connection;
-import org.jsoup.HttpStatusException;
-import org.jsoup.UnsupportedMimeTypeException;
-import org.jsoup.nodes.Document;
-import org.jsoup.parser.Parser;
-import org.jsoup.parser.TokenQueue;
-
-import javax.net.ssl.*;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -21,9 +18,28 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.jsoup.Connection;
+import org.jsoup.HttpStatusException;
+import org.jsoup.UnsupportedMimeTypeException;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TokenQueue;
 
 /**
  * Implementation of {@link Connection}.
@@ -188,6 +204,11 @@ public class HttpConnection implements Connection {
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             req.cookie(entry.getKey(), entry.getValue());
         }
+        return this;
+    }
+
+    public Connection proxy(Proxy proxy) {
+        req.proxy(proxy);
         return this;
     }
 
@@ -364,6 +385,7 @@ public class HttpConnection implements Connection {
         private boolean excludeExpiredCookies = false;
         private boolean ignoreHttpErrors = false;
         private boolean ignoreContentType = false;
+        private Proxy proxy;
         private Parser parser;
         private boolean validateTSLCertificates = true;
         private String postDataCharset = DataUtil.defaultCharset;
@@ -450,6 +472,15 @@ public class HttpConnection implements Connection {
 
         public Collection<Connection.KeyVal> data() {
             return data;
+        }
+
+        public Request proxy(Proxy proxy) {
+            this.proxy = proxy;
+            return this;
+        }
+
+        public Proxy proxy() {
+            return proxy;
         }
 
         public Request parser(Parser parser) {
@@ -635,7 +666,12 @@ public class HttpConnection implements Connection {
 
         // set up connection defaults, and details from request
         private static HttpURLConnection createConnection(Connection.Request req) throws IOException {
-            HttpURLConnection conn = (HttpURLConnection) req.url().openConnection();
+            HttpURLConnection conn = null;
+            if (req.proxy() == null) {
+                conn = (HttpURLConnection) req.url().openConnection();
+            } else {
+                conn = (HttpURLConnection) req.url().openConnection(req.proxy());
+            }
 
             conn.setRequestMethod(req.method().name());
             conn.setInstanceFollowRedirects(false); // don't rely on native redirection support
