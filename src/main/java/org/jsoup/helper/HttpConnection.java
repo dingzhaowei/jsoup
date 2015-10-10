@@ -831,7 +831,15 @@ public class HttpConnection implements Connection {
 
             if (bound != null) {
                 // boundary will be set if we're in multipart mode
+                boolean raw = false;
                 for (Connection.KeyVal keyVal : data) {
+                    if (keyVal.key().equals("raw") && keyVal.hasInputStream()) {
+                        // directly upload raw binary data
+                        DataUtil.crossStreams(keyVal.inputStream(), outputStream);
+                        outputStream.flush();
+                        raw = true;
+                        break;
+                    }
                     w.write("--");
                     w.write(bound);
                     w.write("\r\n");
@@ -851,9 +859,11 @@ public class HttpConnection implements Connection {
                     }
                     w.write("\r\n");
                 }
-                w.write("--");
-                w.write(bound);
-                w.write("--");
+                if (!raw) {
+                    w.write("--");
+                    w.write(bound);
+                    w.write("--");
+                }
             } else {
                 // regular form data (application/x-www-form-urlencoded)
                 boolean first = true;
