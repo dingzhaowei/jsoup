@@ -28,7 +28,7 @@ public interface Connection {
      * GET and POST http methods.
      */
     public enum Method {
-        GET(false), POST(true), PUT(true), DELETE(false), PATCH(true);
+        HEAD(false), GET(false), POST(true), PUT(true), DELETE(false), PATCH(true);
 
         private final boolean hasBody;
 
@@ -461,7 +461,7 @@ public interface Connection {
          * @return this Request, for chaining
          */
         public Request excludeExpiredCookies(boolean ecludeExpiredCookies);
-        
+
         /**
          * Get the current followRedirects configuration.
          * @return true if followRedirects is enabled.

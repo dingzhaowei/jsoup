@@ -41,6 +41,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.parser.Parser;
 import org.jsoup.parser.TokenQueue;
 
+import static org.jsoup.Connection.Method.HEAD;
+
 /**
  * Implementation of {@link Connection}.
  * @see org.jsoup.Jsoup#connect(String)
@@ -596,7 +598,7 @@ public class HttpConnection implements Connection {
                             contentType, req.url().toString());
 
                 res.charset = DataUtil.getCharsetFromContentType(res.contentType); // may be null, readInputStream deals with it
-                if (conn.getContentLength() != 0) { // -1 means unknown, chunked. sun throws an IO exception on 500 response with no content when trying to read body
+                if (conn.getContentLength() != 0 && req.method() != HEAD) { // -1 means unknown, chunked. sun throws an IO exception on 500 response with no content when trying to read body
                     InputStream bodyStream = null;
                     InputStream dataStream = null;
                     try {
