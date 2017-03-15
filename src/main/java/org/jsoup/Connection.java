@@ -194,8 +194,8 @@ public interface Connection {
     public Connection data(String... keyvals);
 
     /**
-     * Add a raw data. valid for {@link Method.POST} only
-     * @param rawdata
+     * Specify the raw data to post. You should set a proper header (e.g. "application/json") at the same time.
+     * @param rawdata the raw data
      * @return this Connection, for chaining
      */
     public Connection rawData(String rawdata);
@@ -542,17 +542,15 @@ public interface Connection {
         public boolean isRawData();
 
         /**
-         * Specify the rawdata. valid for {@link Method.POST} only. <br/>
-         * You have to set {@link Connection.header} to not "application/x-www-form-urlencoded" <br/>
-         * or example use: .header("Content-Type", "application/json")
-         * @param rawdata
+         * Specify the raw data to post.
+         * @param rawdata the raw data
          * @return this Request, for chaining
          */
         public Request rawData(String rawdata);
 
         /**
-         * Get raw data. valid for {@link Method.POST} only
-         * @return the raw data or null (default)
+         * Get the raw data to post.
+         * @return the raw data
          */
         public String rawData();
 
