@@ -194,6 +194,13 @@ public interface Connection {
     public Connection data(String... keyvals);
 
     /**
+     * Add a raw data. valid for {@link Method.POST} only
+     * @param rawdata
+     * @return this Connection, for chaining
+     */
+    public Connection rawData(String rawdata);
+
+    /**
      * Set a request header.
      * @param name header name
      * @param value header value
@@ -527,6 +534,27 @@ public interface Connection {
          * @return collection of keyvals
          */
         public Collection<KeyVal> data();
+
+        /**
+         * Get the current isRawData configuration.
+         * @return true if rawData was set; false (default)
+         */
+        public boolean isRawData();
+
+        /**
+         * Specify the rawdata. valid for {@link Method.POST} only. <br/>
+         * You have to set {@link Connection.header} to not "application/x-www-form-urlencoded" <br/>
+         * or example use: .header("Content-Type", "application/json")
+         * @param rawdata
+         * @return this Request, for chaining
+         */
+        public Request rawData(String rawdata);
+
+        /**
+         * Get raw data. valid for {@link Method.POST} only
+         * @return the raw data or null (default)
+         */
+        public String rawData();
 
         /**
          * Specify the parser to use when parsing the document.

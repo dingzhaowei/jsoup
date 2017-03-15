@@ -191,6 +191,11 @@ public class HttpConnection implements Connection {
         return this;
     }
 
+    public Connection rawData(String rawdata) {
+        req.rawData(rawdata);
+        return this;
+    }
+
     public Connection header(String name, String value) {
         req.header(name, value);
         return this;
@@ -391,6 +396,7 @@ public class HttpConnection implements Connection {
         private Parser parser;
         private boolean validateTSLCertificates = true;
         private String postDataCharset = DataUtil.defaultCharset;
+        private String rawData;
 
         private Request() {
             timeoutMilliseconds = 3000;
@@ -476,6 +482,19 @@ public class HttpConnection implements Connection {
             return data;
         }
 
+        public Request rawData(String rawdata) {
+            this.rawData = rawdata;
+            return this;
+        }
+
+        public boolean isRawData() {
+            return rawData != null;
+        }
+
+        public String rawData() {
+            return rawData;
+        }
+
         public Request proxy(Proxy proxy) {
             this.proxy = proxy;
             return this;
@@ -553,15 +572,20 @@ public class HttpConnection implements Connection {
             String mimeBoundary = null;
             if (!req.method().hasBody() && req.data().size() > 0) {
                 serialiseRequestUrl(req); // appends query string
-            } else if (req.method().hasBody()) {
+            } else if (req.method().hasBody() && !req.isRawData()) {
                 mimeBoundary = setOutputContentType(req);
             }
             HttpURLConnection conn = createConnection(req);
             Response res;
             try {
                 conn.connect();
-                if (conn.getDoOutput())
-                    writePost(req, conn.getOutputStream(), mimeBoundary);
+                if (conn.getDoOutput()) {
+                    if(req.isRawData()){
+                        writeRawPost(req, conn.getOutputStream());
+                    } else {
+                        writePost(req, conn.getOutputStream(), mimeBoundary);
+                    }
+                }
 
                 int status = conn.getResponseCode();
                 res = new Response(previousResponse);
@@ -825,6 +849,15 @@ public class HttpConnection implements Connection {
                 req.header(CONTENT_TYPE, FORM_URL_ENCODED + "; charset=" + req.postDataCharset());
             }
             return bound;
+        }
+
+        private static void writeRawPost(final Connection.Request req, final OutputStream outputStream) throws IOException {
+            final BufferedWriter w = new BufferedWriter(new OutputStreamWriter(outputStream, DataUtil.defaultCharset));
+            try {
+                w.write(req.rawData());
+            } finally {
+                w.close();
+            }
         }
 
         private static void writePost(final Connection.Request req, final OutputStream outputStream, final String bound) throws IOException {

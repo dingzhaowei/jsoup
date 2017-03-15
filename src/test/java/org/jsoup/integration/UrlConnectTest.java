@@ -54,7 +54,7 @@ public class UrlConnectTest {
         assert(res.hasCookie("BAIDUID"));
         assertEquals("text/html;charset=gbk", res.contentType());
     }
-    
+
     @Test
     public void exceptOnUnknownContentType() {
         String url = "http://direct.jsoup.org/rez/osi_logo.png"; // not text/* but image/png, should throw
@@ -103,6 +103,15 @@ public class UrlConnectTest {
         assertEquals("auth=token", ihVal("HTTP_COOKIE", doc));
         assertEquals("度一下", ihVal("百", doc));
         assertEquals("Jsoup, Jonathan", ihVal("uname", doc));
+    }
+
+    @Test
+    public void doesPostWithRawdata() throws IOException {
+        Document doc = Jsoup.connect(echoURL)
+                .rawData("myRawData")
+                .header("Content-Type", "application/json")
+                .post();
+        assertEquals("myRawData", ihVal("POSTDATA", doc));
     }
 
     @Test
